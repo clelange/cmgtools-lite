@@ -15,6 +15,12 @@ class MergedPlotter(PlotterBase):
             plotter.applySmoothing()
 
 
+    def scan(self,var,cut):
+        for plotter in self.plotters:
+            plotter.tree.SetScanField(0)
+            plotter.tree.Scan(var,cut,"colsize=20")
+
+
     def drawTH1(self,var,cuts,lumi,bins,min,max,titlex = "",units = "",drawStyle = "HIST"):
         h=None
         for plotter in self.plotters:
@@ -102,6 +108,27 @@ class MergedPlotter(PlotterBase):
         h.GetYaxis().SetTitle(titley+ " ["+unitsy+"]")
         return h
 
+
+    def drawTH3Binned(self,var,cuts,lumi,binningx,binningy,binningz,titlex = "",unitsx = "",titley = "",unitsy = "",titlez="",unitsz="",drawStyle = "COLZ"):
+        h=None
+        for plotter in self.plotters:
+            if h is None:
+                h=plotter.drawTH3Binned(var,cuts,lumi,binningx,binningy,binningz,titlex,unitsx,titley,unitsy,titlez,unitsz,drawStyle)
+            else:
+                h.Add(plotter.drawTH3Binned(var,cuts,lumi,binningx,binningy,binningz,titlex,unitsx,titley,unitsy,titlez,unitsz,drawStyle))
+
+#        h.SetLineStyle(self.linestyle)
+#        h.SetLineColor(self.linecolor)
+#        h.SetLineWidth(self.linewidth)
+        h.SetFillStyle(self.fillstyle)
+        h.SetFillColor(self.fillcolor)
+        h.SetMarkerStyle(self.markerstyle)
+        h.GetXaxis().SetTitle(titlex+ " ["+unitsx+"]")
+        h.GetYaxis().SetTitle(titley+ " ["+unitsy+"]")
+        h.GetZaxis().SetTitle(titlez+ " ["+unitsz+"]")
+        return h
+
+    
     def drawTH1Binned(self,var,cuts,lumi,binningx,titlex = "",unitsx = "",drawStyle = "COLZ"):
         h=None
         for plotter in self.plotters:

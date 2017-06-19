@@ -11,7 +11,13 @@ def returnString(func):
             st=st+"+("+str(func.GetParameter(i))+")"+("*MH"*i)
         return st    
     elif func.GetName().find("llog")!=-1:
-        return func.GetParameter(0)+"+"+func.GetParameter(1)+"*log(MH)"
+        return str(func.GetParameter(0))+"+"+str(func.GetParameter(1))+"*log(MH)"
+    if func.GetName().find("laur")!=-1:
+        st='0'
+        for i in range(0,func.GetNpar()):
+            st=st+"+("+str(func.GetParameter(i))+")"+"/MH^"+str(i)
+        return st    
+
     else:
         return ""
 
@@ -33,6 +39,9 @@ graphStr= options.graphs.split(',')
 parameterization={}
 
 
+
+ff=ROOT.TFile("debug_"+options.output+".root","RECREATE")
+ff.cd()
 for string in graphStr:
     comps =string.split(':')      
     graph=rootFile.Get(comps[0])
@@ -41,11 +50,22 @@ for string in graphStr:
     elif  comps[1]=="llog":
         func=ROOT.TF1("llog","[0]+[1]*log(x)",1,13000)
         func.SetParameters(1,1)
+    elif  comps[1].find("laur")!=-1:
+        order=int(comps[1].split("laur")[1])
+        st='0'
+        for i in range(0,order):
+            st=st+"+["+str(i)+"]"+"/x^"+str(i)
+        print 'Laurent String',st    
+        func=ROOT.TF1(comps[1],st,1,13000)
+        for i in range(0,order):
+            func.SetParameter(i,0)
     
     graph.Fit(func,"","",options.min,options.max)
     parameterization[comps[0]]=returnString(func)
+    graph.Write(comps[0])
+    func.Write(comps[0]+"_func")
 
-
+ff.Close()
 f=open(options.output,"w")
 json.dump(parameterization,f)
 f.close()

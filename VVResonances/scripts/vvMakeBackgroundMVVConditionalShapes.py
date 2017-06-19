@@ -24,7 +24,7 @@ parser.add_option("-V","--vary",dest="vary",help="variablex",default='lnujj_l2_p
 parser.add_option("-B","--binsy",dest="binsy",type=int,help="bins in x",default=20)
 parser.add_option("-y","--miny",dest="miny",type=float,help="minimum y",default=0)
 parser.add_option("-Y","--maxy",dest="maxy",type=float, help="maximum y",default=160)
-parser.add_option("-l","--lumi",dest="lumi",type=float, help="lumi",default=7700)
+parser.add_option("-l","--lumi",dest="lumi",type=float, help="lumi",default=1)
 
 (options,args) = parser.parse_args()
 
@@ -60,12 +60,12 @@ def runFits(data,options):
         fitter.w.var("M").setVal((options.maxx-options.minx)/2.0)
         fitter.w.var("M").setMax(options.maxx)
         fitter.w.var("M").setMin(options.minx)
-        fitter.erfpow('model','M')
+        fitter.erfpow2('model','M')
 
         fitter.importBinnedData(histo,['M'],'data')   
         fitter.fit('model','data',[ROOT.RooFit.SumW2Error(1),ROOT.RooFit.Minos(1)])
 
-#        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_pass1_"+str(i)+".png")
+        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_pass1_"+str(i)+".root")
     
         for j,g in enumerate(graphs):
             c,cerr=fitter.fetch("c_"+str(j))
@@ -73,7 +73,7 @@ def runFits(data,options):
                 cerr=abs(c)*10000
             g.SetPoint(i-1,center,c)
             g.SetPointError(i-1,0.0,cerr)
-    parameter0=ROOT.TF1("pol0","pol0",options.minx,options.maxx)
+    parameter0=ROOT.TF1("pol2","pol2",options.minx,options.maxx)
     graphs[0].Fit(parameter0)
     
 
@@ -92,7 +92,7 @@ def runFits(data,options):
         fitter.importBinnedData(histo,['M'],'data')   
         fitter.fit('model','data',[ROOT.RooFit.SumW2Error(1),ROOT.RooFit.Minos(1)])
 
-#        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_pass2_"+str(i)+".png")
+        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_pass2_"+str(i)+".root")
     
         for j,g in enumerate(graphs):
             if j>0:
@@ -127,7 +127,7 @@ def runFits(data,options):
         fitter.w.var("c_2").setConstant(1)
         fitter.importBinnedData(histo,['M'],'data')   
         fitter.fit('model','data',[ROOT.RooFit.SumW2Error(1),ROOT.RooFit.Minos(1)])
-#        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_pass3_"+str(i)+".png")
+        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_pass3_"+str(i)+".root")
 
     
         for j,g in enumerate(graphs):
@@ -167,7 +167,7 @@ def runFits(data,options):
         fitter.w.var("c_2").setConstant(1)
         fitter.importBinnedData(histo,['M'],'data')   
 
-        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_pass3_"+str(i)+".png")
+        chi=fitter.projection("model","data","M","debugfitMVV_"+options.output+"_final_"+str(i)+".root")
 
 
     #create json
@@ -205,6 +205,13 @@ for filename in os.listdir(args[0]):
             dataPlotters[-1].addCorrectionFactor('genWeight','tree')
             dataPlotters[-1].addCorrectionFactor('puWeight','tree')
     
+
+sigmas=[]
+for d in dataPlotters:
+    sigmas.append(d.tree.GetMaximum("xsec")/d.weightinv)
+sigmaW=max(sigmas)
+for p in dataPlotters:
+    p.addCorrectionFactor(1.0/sigmaW,'flat')
 
 
 
