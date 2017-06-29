@@ -30,14 +30,14 @@ dataTemplate = "SingleMuon,SingleElectron,MET"
 minMJJ = 40.0
 maxMJJ = 160.0
 
-minMVV = 800.0
+minMVV = 1000.0
 maxMVV = 4500.0
 
 binsMJJ = 60
 binsMVV = 200
 
 
-def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir):
+def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, logTerm=False):
     sampleTypes = sampleTypes.split(',')
     dataPlotters = []
     for filename in os.listdir(templateDir):
@@ -61,10 +61,16 @@ def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir):
     #                histo.SetBinContent(i,0.0)
     sqrt_s = 13000
     xRange = [800, 5000]
-    qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [0])/TMath::Power(x/{sqrt_s}, [1]+[2]*TMath::Log(x/{sqrt_s}))".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
+    nPar = 2
+    if logTerm:
+        qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [0])/TMath::Power(x/{sqrt_s}, [1]+[2]*TMath::Log(x/{sqrt_s}))".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
+        nPar = 3
+    else:
+        qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [0])/TMath::Power(x/{sqrt_s}, [1])".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
     qcdFunc.SetParameter(0, 4.48531e-07)
     qcdFunc.SetParameter(1, -7.96655e-01)
-    qcdFunc.SetParameter(2, 7.43952e+00)
+    if logTerm:
+        qcdFunc.SetParameter(2, 7.43952e+00)
 
     canvas = ROOT.TCanvas("c1", "c1", 800, 600)
     canvas.Draw()
@@ -75,7 +81,7 @@ def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir):
     # print "p1", fitResult.GetParameter(1), "+/-", fitResult.GetParError(1)
     # print "p2", fitResult.GetParameter(2), "+/-", fitResult.GetParError(2)
     parDict = {}
-    for par in range(3):
+    for par in range(nPar):
         parDict["p%d" % par] = fitResult.GetParameter(par)
         parDict["e%d" % par] = fitResult.GetParError(par)
     # qcdFunc.Draw()
@@ -110,12 +116,14 @@ def main():
                     # QCD function
                     # card.addMVVBackgroundShapeQCD("QCD", "MVV", logTerm=False)
                     cuts = findCut(categories, cat="lnujj", lep=lepton, tau21=purity, mJ=boson[-1], reg=categ)
-                    parDict = makePrefit(dataTemplate, cuts, catName, resonanceMassString, templateDir)
+                    logTerm = False
+                    parDict = makePrefit(dataTemplate, cuts, catName, resonanceMassString, templateDir, logTerm)
                     preconstraints = {}
-                    preconstraints['p0'] = {}
-                    preconstraints['p1'] = {}
-                    preconstraints['p2'] = {}
-                    for i in range(3):
+                    nPar = 2
+                    if logTerm:
+                        nPar = 3
+                    for i in range(nPar):
+                        preconstraints['p%s' % i] = {}
                         preconstraints['p%s' % i]['val'] = parDict['p%s' % i]
                         preconstraints['p%s' % i]['err'] = parDict['e%s' % i]*5
                     # preconstraints['p0']['val'] = -0.05
@@ -126,7 +134,8 @@ def main():
                     # preconstraints['p2']['err'] = 400/2.
 
                     # card.addMVVBackgroundShapeErfPow("QCD", "MVV", preconstrains=preconstraints)
-                    card.addMVVBackgroundShapeErfPow("QCD", "MVV")
+                    # card.addMVVBackgroundShapeErfPow("QCD", "MVV")
+                    card.addMVVBackgroundShapeQCD("QCD", "MVV", logTerm=logTerm, preconstrains=preconstraints)
                     # card.addMVVBackgroundShapeExp("QCD", "MVV")
                     card.addFloatingYield("QCD", 1, 1000, mini=0, maxi=1e+9)
                     card.importBinnedData("{finalState}_{catName}.root".format(
