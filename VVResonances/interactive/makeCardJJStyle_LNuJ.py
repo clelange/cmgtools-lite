@@ -36,8 +36,21 @@ maxMVV = 4500.0
 binsMJJ = 60
 binsMVV = 200
 
+fTestResults = {}
+fTestResults["mu_HP_WW_nob"] = 2
+fTestResults["mu_HP_WZ_nob"] = 3
+fTestResults["mu_LP_WW_nob"] = 2
+fTestResults["mu_LP_WZ_nob"] = 2
+fTestResults["e_HP_WW_nob"] = 2
+fTestResults["e_HP_WZ_nob"] = 3
+fTestResults["e_LP_WW_nob"] = 2
+fTestResults["e_LP_WZ_nob"] = 3
 
-def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, logTerm=False):
+
+def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, degree):
+    assert type(degree) is int, "degree is not an integer: %r" % id
+    assert(degree >= 2), "Need at least 2 parameters"
+    assert(degree < 5), "Currently support at most 4 parameters"
     sampleTypes = sampleTypes.split(',')
     dataPlotters = []
     for filename in os.listdir(templateDir):
@@ -55,22 +68,45 @@ def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, log
     data = MergedPlotter(dataPlotters)
 
     histo = data.drawTH1(resonanceMassString, cuts, "1", binsMVV, minMVV, maxMVV)
+    # for debugging the fit it helps to write out the histo and fit it interactively
+    # outFile = ROOT.TFile("%s_datahist.root" % catName, "recreate")
+    # outFile.cd()
+    # histo.Write()
+    # outFile.Write()
+    # outFile.Close()
+
+    """
+    qcfFunc1 = TF1("qcdFunc2", "[1]*TMath::Power( x/13000., [0])", 1000, 4500)
+    qcfFunc2 = TF1("qcdFunc3", "[2]*TMath::Power(1-x/13000., [0])/TMath::Power(x/13000., [1])", 1000, 4500)
+    qcfFunc3 = TF1("qcdFunc4", "[3]*TMath::Power(1-x/13000., [0])/TMath::Power(x/13000., [1]+[2]*TMath::Log(x/13000.))", 1000, 4500)
+    TH1D* myHist = (TH1D*)_file0->Get("tmpTH1")
+    myHist->Fit("qcdFunc2")
+    myHist->Fit("qcdFunc3")
+    myHist->Fit("qcdFunc4")
+    """
+
     #    if options.zeroNegative:
     #        for i in range(0,int(pbins[0])+2):
     #            if histo.GetBinContent(i)<0:
     #                histo.SetBinContent(i,0.0)
     sqrt_s = 13000
-    xRange = [800, 5000]
-    nPar = 2
-    if logTerm:
-        qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [0])/TMath::Power(x/{sqrt_s}, [1]+[2]*TMath::Log(x/{sqrt_s}))".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
-        nPar = 3
-    else:
-        qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [0])/TMath::Power(x/{sqrt_s}, [1])".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
-    qcdFunc.SetParameter(0, 4.48531e-07)
-    qcdFunc.SetParameter(1, -7.96655e-01)
-    if logTerm:
-        qcdFunc.SetParameter(2, 7.43952e+00)
+    xRange = [minMVV, maxMVV]
+    qcdFunc = None
+    if (degree == 2):
+        qcdFunc = ROOT.TF1("qcdFunc", "[0]*TMath::Power( x/{sqrt_s}, [1])".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
+        qcdFunc.SetParameter(0, 1e-06)
+        qcdFunc.SetParameter(1, -6)
+    if (degree == 3):
+        qcdFunc = ROOT.TF1("qcdFunc", "[0]*TMath::Power(1-x/{sqrt_s}, [1])/TMath::Power(x/{sqrt_s}, [2])".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
+    if (degree == 4):
+        qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [2])/TMath::Power(x/{sqrt_s}, [2]+[3]*TMath::Log(x/{sqrt_s}))".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
+
+    if (degree >= 3):
+        qcdFunc.SetParameter(0, 1e-03)
+        qcdFunc.SetParameter(1, 7)
+        qcdFunc.SetParameter(2, 5)
+        if (degree >= 4):
+            qcdFunc.SetParameter(4, 1e-04)
 
     canvas = ROOT.TCanvas("c1", "c1", 800, 600)
     canvas.Draw()
@@ -81,9 +117,10 @@ def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, log
     # print "p1", fitResult.GetParameter(1), "+/-", fitResult.GetParError(1)
     # print "p2", fitResult.GetParameter(2), "+/-", fitResult.GetParError(2)
     parDict = {}
-    for par in range(nPar):
-        parDict["p%d" % par] = fitResult.GetParameter(par)
-        parDict["e%d" % par] = fitResult.GetParError(par)
+    # shift the parameter by one since RooFit doesn't use normalisation
+    for par in range(degree-1):
+        parDict["p%d" % par] = fitResult.GetParameter(par+1)
+        parDict["e%d" % par] = fitResult.GetParError(par+1)
     # qcdFunc.Draw()
     canvas.SaveAs("prefit_%s.png" % (catName))
     return parDict
@@ -116,13 +153,9 @@ def main():
                     # QCD function
                     # card.addMVVBackgroundShapeQCD("QCD", "MVV", logTerm=False)
                     cuts = findCut(categories, cat="lnujj", lep=lepton, tau21=purity, mJ=boson[-1], reg=categ)
-                    logTerm = False
-                    parDict = makePrefit(dataTemplate, cuts, catName, resonanceMassString, templateDir, logTerm)
+                    parDict = makePrefit(dataTemplate, cuts, catName, resonanceMassString, templateDir, fTestResults[catName])
                     preconstraints = {}
-                    nPar = 2
-                    if logTerm:
-                        nPar = 3
-                    for i in range(nPar):
+                    for i in range(fTestResults[catName]-1):
                         preconstraints['p%s' % i] = {}
                         preconstraints['p%s' % i]['val'] = parDict['p%s' % i]
                         preconstraints['p%s' % i]['err'] = parDict['e%s' % i]*5
@@ -133,9 +166,9 @@ def main():
                     # preconstraints['p2']['val'] = 400
                     # preconstraints['p2']['err'] = 400/2.
 
-                    # card.addMVVBackgroundShapeErfPow("QCD", "MVV", preconstrains=preconstraints)
+                    # card.addMVVBackgroundShapeErfPow("QCD", "MVV", preconstraints=preconstraints)
                     # card.addMVVBackgroundShapeErfPow("QCD", "MVV")
-                    card.addMVVBackgroundShapeQCD("QCD", "MVV", logTerm=logTerm, preconstrains=preconstraints)
+                    card.addMVVBackgroundShapeQCDJJStyle("QCD", "MVV", degree=fTestResults[catName], preconstraints=preconstraints)
                     # card.addMVVBackgroundShapeExp("QCD", "MVV")
                     card.addFloatingYield("QCD", 1, 1000, mini=0, maxi=1e+9)
                     card.importBinnedData("{finalState}_{catName}.root".format(
@@ -153,6 +186,11 @@ def main():
                     # lepton efficiency
                     card.addSystematic("CMS_eff_" + lepton, "lnN", {'XWW': 1.1, 'XWZ': 1.1})
 
+                    #W+jets cross section in acceptance-dominated by pruned mass
+                    # card.addSystematic("CMS_VV_LNuJ_nonRes_norm_"+lepton+"_"+purity+"_"+category,"lnN",{'nonRes':1.5})
+                    # card.addSystematic("CMS_VV_LNuJ_resW_norm_"+lepton+"_"+purity+"_"+category,"lnN",{'resW':1.20})
+
+
                     # tau21
                     if purity == 'HP':
                         card.addSystematic("CMS_VV_LNuJ_tau21_eff", "lnN", {'XWW': 1 + 0.14, 'XWZ': 1 + 0.14})
@@ -163,13 +201,24 @@ def main():
                     card.addSystematic("CMS_btag_fake", "lnN", {'XWW': 1 + 0.02, 'XWZ': 1 + 0.02})
 
                     # pruned mass scale
-                    card.addSystematic("CMS_scale_j", "param", [0.0, 0.02])
-                    card.addSystematic("CMS_res_j", "param", [0.0, 0.05])
-                    card.addSystematic("CMS_scale_prunedj", "param", [0.0, 0.0094])
-                    card.addSystematic("CMS_res_prunedj", "param", [0.0, 0.2])
+                    card.addSystematic("CMS_scale_j","param",[0.0,0.02])
+                    card.addSystematic("CMS_res_j","param",[0.0,0.05])
+                    card.addSystematic("CMS_scale_prunedj","param",[0.0,0.0094])
+                    card.addSystematic("CMS_res_prunedj","param",[0.0,0.2])
+                    # card.addSystematic('CMS_VV_topPt_0_'+lepton+"_"+purity+"_"+category,"param",[0.0,0.2])
+                    # card.addSystematic('CMS_VV_topPt_1_'+lepton+"_"+purity+"_"+category,"param",[0.0,25000.0])
 
-                    card.addSystematic("CMS_scale_MET", "param", [0.0, 0.02])
-                    card.addSystematic("CMS_res_MET", "param", [0.0, 0.01])
+                    card.addSystematic("CMS_scale_MET","param",[0.0,0.02])
+                    card.addSystematic("CMS_res_MET","param",[0.0,0.01])
+                    # card.addSystematic("CMS_VV_LNuJ_nonRes_PTX_"+qcdTag,"param",[0.0,0.333])
+                    # card.addSystematic("CMS_VV_LNuJ_nonRes_OPTX_"+qcdTag,"param",[0.0,0.333])
+
+                    # card.addSystematic("CMS_VV_LNuJ_nonRes_PTY_"+qcdTag,"param",[0.0,333])
+                    # card.addSystematic("CMS_VV_LNuJ_nonRes_OPTY_"+qcdTag,"param",[0.0,0.6])
+
+
+                    card.addSystematic("CMS_VV_LNuJ_resW_PT_"+resWTag,"param",[0.0,0.333])
+                    card.addSystematic("CMS_VV_LNuJ_resW_OPT_"+resWTag,"param",[0.0,0.333])
 
                     # # Tagging efficiency correlated between signal and top in each purity
                     # if purity == 'HP':

@@ -11,7 +11,7 @@ parser.add_option("-x","--minX",dest="minX",type=float,help="minimum x",default=
 parser.add_option("-X","--maxX",dest="maxX",type=float,help="maximum x",default=5000.0)
 parser.add_option("-y","--minY",dest="minY",type=float,help="minimum y",default=0.00001)
 parser.add_option("-Y","--maxY",dest="maxY",type=float,help="maximum y",default=1000)
-parser.add_option("-b","--blind",dest="blind",type=int,help="Not do observed ",default=1)
+parser.add_option("-b","--blind",dest="blind",type=int,help="Not do observed ",default=0)
 parser.add_option("-l","--log",dest="log",type=int,help="Log plot",default=1)
 
 parser.add_option("-t","--titleX",dest="titleX",default='M_{X} [GeV]',help="title of x axis")
@@ -46,22 +46,22 @@ data={}
 for event in limit:
     if float(event.mh)<options.minX or float(event.mh)>options.maxX:
         continue
-    
+
     if not (event.mh in data.keys()):
         data[event.mh]={}
 
 
-    if event.quantileExpected<0:            
+    if event.quantileExpected<0:
         data[event.mh]['obs']=event.limit
-    if event.quantileExpected>0.02 and event.quantileExpected<0.03:            
+    if event.quantileExpected>0.02 and event.quantileExpected<0.03:
         data[event.mh]['-2sigma']=event.limit
-    if event.quantileExpected>0.15 and event.quantileExpected<0.17:            
+    if event.quantileExpected>0.15 and event.quantileExpected<0.17:
         data[event.mh]['-1sigma']=event.limit
-    if event.quantileExpected>0.49 and event.quantileExpected<0.51:            
+    if event.quantileExpected>0.49 and event.quantileExpected<0.51:
         data[event.mh]['exp']=event.limit
-    if event.quantileExpected>0.83 and event.quantileExpected<0.85:            
+    if event.quantileExpected>0.83 and event.quantileExpected<0.85:
         data[event.mh]['+1sigma']=event.limit
-    if event.quantileExpected>0.974 and event.quantileExpected<0.976:            
+    if event.quantileExpected>0.974 and event.quantileExpected<0.976:
         data[event.mh]['+2sigma']=event.limit
 
 
@@ -94,7 +94,7 @@ for mass,info in data.iteritems():
                 and 'obs' in info.keys()):
         print 'Incomplete file'
         continue
-    
+
 
     band68.SetPoint(N,mass,info['exp'])
     band95.SetPoint(N,mass,info['exp'])
@@ -112,10 +112,10 @@ for mass,info in data.iteritems():
 band68.Sort()
 band95.Sort()
 bandObs.Sort()
-line_plus1.Sort()    
-line_plus2.Sort()    
-line_minus1.Sort()    
-line_minus2.Sort()    
+line_plus1.Sort()
+line_plus2.Sort()
+line_minus1.Sort()
+line_minus2.Sort()
 
 
 
@@ -183,8 +183,8 @@ if options.blind==0:
 
 
 
-c.SaveAs(options.output+".png")    
-c.SaveAs(options.output+".pdf")    
+c.SaveAs(options.output+".png")
+c.SaveAs(options.output+".pdf")
 
 fout=ROOT.TFile(options.output+".root","RECREATE")
 fout.cd()
@@ -192,12 +192,10 @@ c.Write()
 band68.Write()
 band95.Write()
 bandObs.Write()
-line_plus1.Write()    
-line_plus2.Write()    
-line_minus1.Write()    
-line_minus2.Write()    
+line_plus1.Write()
+line_plus2.Write()
+line_minus1.Write()
+line_minus2.Write()
 
 fout.Close()
 f.Close()
-
-
