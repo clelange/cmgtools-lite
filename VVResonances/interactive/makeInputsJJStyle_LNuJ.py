@@ -41,7 +41,7 @@ SMWZTemplate = 'WZTo1L1Nu2Q'
 minMJJ = 40.0
 maxMJJ = 160.0
 
-minMVV = 1000.0
+minMVV = 800.0
 maxMVV = 4500.0
 
 binsMJJ = 60

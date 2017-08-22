@@ -30,7 +30,7 @@ dataTemplate = "SingleMuon,SingleElectron,MET"
 minMJJ = 40.0
 maxMJJ = 160.0
 
-minMVV = 1000.0
+minMVV = 800
 maxMVV = 4500.0
 
 binsMJJ = 60
@@ -144,9 +144,9 @@ def main():
                         finalState=finalState, channel=channel, cat=cat)
 
                     # WW signal-MVV
-                    # card.addMVVSignalParametricShape(channel, "MVV", "{finalState}_{channel}.json".format(finalState=finalState, channel=channel), {
-                    #                                  'CMS_scale_j': 1, 'CMS_scale_MET': 1.0}, {'CMS_res_j': 1.0, 'CMS_res_MET': 1.0})
-                    card.addMVVSignalParametricShape(channel, "MVV", "{finalState}_{channel}.json".format(finalState=finalState, channel=channel), {})
+                    card.addMVVSignalParametricShape(channel, "MVV", "{finalState}_{channel}.json".format(finalState=finalState, channel=channel), {
+                                                     'CMS_scale_j': 1, 'CMS_scale_MET': 1.0}, {'CMS_res_j': 1.0, 'CMS_res_MET': 1.0})
+                    # card.addMVVSignalParametricShape(channel, "MVV", "{finalState}_{channel}.json".format(finalState=finalState, channel=channel), {})
                     card.addParametricYield(channel, 0, "{finalState}_{channel}_{catName}_yield.json".format(
                         finalState=finalState, channel=channel, catName=catName))
 
@@ -158,7 +158,7 @@ def main():
                     for i in range(fTestResults[catName]-1):
                         preconstraints['p%s' % i] = {}
                         preconstraints['p%s' % i]['val'] = parDict['p%s' % i]
-                        preconstraints['p%s' % i]['err'] = parDict['e%s' % i]*5
+                        preconstraints['p%s' % i]['err'] = parDict['e%s' % i]*1000
                     # preconstraints['p0']['val'] = -0.05
                     # preconstraints['p0']['err'] = 0.05/2.
                     # preconstraints['p1']['val'] = 1000
@@ -203,8 +203,8 @@ def main():
                     # pruned mass scale
                     card.addSystematic("CMS_scale_j","param",[0.0,0.02])
                     card.addSystematic("CMS_res_j","param",[0.0,0.05])
-                    card.addSystematic("CMS_scale_prunedj","param",[0.0,0.0094])
-                    card.addSystematic("CMS_res_prunedj","param",[0.0,0.2])
+                    # card.addSystematic("CMS_scale_prunedj","param",[0.0,0.0094])
+                    # card.addSystematic("CMS_res_prunedj","param",[0.0,0.2])
                     # card.addSystematic('CMS_VV_topPt_0_'+lepton+"_"+purity+"_"+category,"param",[0.0,0.2])
                     # card.addSystematic('CMS_VV_topPt_1_'+lepton+"_"+purity+"_"+category,"param",[0.0,25000.0])
 
@@ -217,8 +217,8 @@ def main():
                     # card.addSystematic("CMS_VV_LNuJ_nonRes_OPTY_"+qcdTag,"param",[0.0,0.6])
 
 
-                    card.addSystematic("CMS_VV_LNuJ_resW_PT_"+resWTag,"param",[0.0,0.333])
-                    card.addSystematic("CMS_VV_LNuJ_resW_OPT_"+resWTag,"param",[0.0,0.333])
+                    # card.addSystematic("CMS_VV_LNuJ_resW_PT_"+resWTag,"param",[0.0,0.333])
+                    # card.addSystematic("CMS_VV_LNuJ_resW_OPT_"+resWTag,"param",[0.0,0.333])
 
                     # # Tagging efficiency correlated between signal and top in each purity
                     # if purity == 'HP':
