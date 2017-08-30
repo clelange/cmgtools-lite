@@ -7,8 +7,11 @@ from CMGTools.VVResonances.plotting.TreePlotter import TreePlotter
 from CMGTools.VVResonances.plotting.MergedPlotter import MergedPlotter
 ROOT.gSystem.Load("libHiggsAnalysisCombinedLimit")
 
+useConstraints = False
+constraintsFactor = 5
+
 finalState = "LNUJ"
-channel = "XWW"
+channels = ["XWW", "XWZ"]
 
 lumi = 35900
 leptons = ['mu', 'e']
@@ -122,6 +125,9 @@ def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, deg
         parDict["p%d" % par] = fitResult.GetParameter(par+1)
         parDict["e%d" % par] = fitResult.GetParError(par+1)
     # qcdFunc.Draw()
+    events = histo.Integral()
+    print "Yield:", events
+    parDict["yield"] = events
     canvas.SaveAs("prefit_%s.png" % (catName))
     return parDict
 
@@ -131,8 +137,24 @@ def main():
     templateDir = "samples"
     if len(sys.argv) > 1:
         templateDir = sys.argv[1]
-    cmd = 'combineCards.py '
 
+    commands = []
+
+    for channel in channels:
+        print "-------"*5
+        cmd = 'combineCards.py '
+        cmd += getCommand(templateDir, channel)
+        cmd += " > combined_%s.txt" % channel
+        commands.append(cmd)
+
+    for cmd in commands:
+        print "-------"*5
+        print cmd
+
+
+def getCommand(templateDir, channel):
+
+    cmd = ''
     for lepton in leptons:
         for purity in purities:
             for boson in bosons:
@@ -155,22 +177,32 @@ def main():
                     cuts = findCut(categories, cat="lnujj", lep=lepton, tau21=purity, mJ=boson[-1], reg=categ)
                     parDict = makePrefit(dataTemplate, cuts, catName, resonanceMassString, templateDir, fTestResults[catName])
                     preconstraints = {}
+                    boundaries = {}
                     for i in range(fTestResults[catName]-1):
                         preconstraints['p%s' % i] = {}
+                        boundaries['p%s' % i] = {}
+                        # use prefit value as starting point
                         preconstraints['p%s' % i]['val'] = parDict['p%s' % i]
-                        preconstraints['p%s' % i]['err'] = parDict['e%s' % i]*1000
+                        bounds = []
+                        bounds.append(parDict['p%s' % i] + 1000*parDict['e%s' % i])
+                        bounds.append(parDict['p%s' % i] - 1000*parDict['e%s' % i])
+                        boundaries['p%s' % i] = [min(bounds), max(bounds)]
+                        if useConstraints:
+                            preconstraints['p%s' % i]['err'] = parDict['e%s' % i]*constraintsFactor
                     # preconstraints['p0']['val'] = -0.05
                     # preconstraints['p0']['err'] = 0.05/2.
                     # preconstraints['p1']['val'] = 1000
                     # preconstraints['p1']['err'] = 1000/2.
                     # preconstraints['p2']['val'] = 400
                     # preconstraints['p2']['err'] = 400/2.
+                    events = parDict["yield"]
 
                     # card.addMVVBackgroundShapeErfPow("QCD", "MVV", preconstraints=preconstraints)
                     # card.addMVVBackgroundShapeErfPow("QCD", "MVV")
-                    card.addMVVBackgroundShapeQCDJJStyle("QCD", "MVV", degree=fTestResults[catName], preconstraints=preconstraints)
+                    card.addMVVBackgroundShapeQCDJJStyle("QCD", "MVV", degree=fTestResults[catName], boundaries=boundaries, preconstraints=preconstraints)
                     # card.addMVVBackgroundShapeExp("QCD", "MVV")
-                    card.addFloatingYield("QCD", 1, 1000, mini=0, maxi=1e+9)
+                    # card.addFloatingYield("QCD", 1, 1000, mini=0.5*yield, maxi=1e+9)  # commented out 30 Aug
+                    card.addFixedYieldWithEvents("QCD", 1, events)
                     card.importBinnedData("{finalState}_{catName}.root".format(
                         finalState=finalState, catName=catName), "data", ["MVV"])
 
@@ -179,6 +211,7 @@ def main():
 
                     # luminosity
                     card.addSystematic("CMS_lumi", "lnN", {'XWW': 1.026, 'XWZ': 1.026})
+                    card.addSystematic("CMS_background", "lnN", {'QCD': 1.5})
 
                     # kPDF uncertainty for the signal
                     card.addSystematic("CMS_pdf", "lnN", {'XWW': 1.01, 'XWZ': 1.01})
@@ -236,7 +269,7 @@ def main():
                     card.makeCard()
 
     # make combined cards
-    print cmd
+    return cmd
 
 
 if __name__ == '__main__':

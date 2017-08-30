@@ -99,4 +99,6 @@ def makeNormalizations(name, filename, template, data=0, addCut='', factor=1):
 
 makeSignalShapes("LNUJ_%s" % WWTemplate.shortName, WWTemplate.templateName)
 makeSignalYields("LNUJ_%s" % WWTemplate.shortName, WWTemplate.templateName, WWTemplate.branchingFraction)
+makeSignalShapes("LNUJ_%s" % WZTemplate.shortName, WZTemplate.templateName)
+makeSignalYields("LNUJ_%s" % WZTemplate.shortName, WZTemplate.templateName, WZTemplate.branchingFraction)
 makeNormalizations("data", "LNUJ", dataTemplate, 1)

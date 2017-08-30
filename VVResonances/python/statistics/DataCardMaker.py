@@ -542,7 +542,7 @@ class DataCardMaker:
         qcd = ROOT.RooQCDPdf(pdfName, pdfName, self.w.var(MVV), self.w.var(p0), self.w.var(p1), self.w.var(p2))
         getattr(self.w, 'import')(qcd, ROOT.RooCmdArg())
 
-    def addMVVBackgroundShapeQCDJJStyle(self, name, variable, degree, newTag="", preconstraints={}):
+    def addMVVBackgroundShapeQCDJJStyle(self, name, variable, degree, newTag="", boundaries={}, preconstraints={}):
         """Add QCD background function with potential constraints."""
         """Mind that degree is actually the number of parameters set below + 1 (which is x)"""
 
@@ -572,12 +572,19 @@ class DataCardMaker:
             parName = "_".join([parShort, tag])
             parNames.append(parName)
             parameterDict[parShort] = {}
-            if ("p%d" % i) in preconstraints.keys():
-                parameterDict[parShort]['val'] = preconstraints['p0']['val']
-                parameterDict[parShort]['err'] = preconstraints['p0']['err']
-                self.addSystematic(parName, "param", [parameterDict[parShort]['val'], parameterDict[parShort]['err']])
+            if parShort in preconstraints.keys():
+                parameterDict[parShort]['val'] = preconstraints[parShort]['val']
+                if 'err' in parameterDict[parShort].keys():
+                    parameterDict[parShort]['err'] = preconstraints[parShort]['err']
+                    self.addSystematic(parName, "param", [parameterDict[parShort]['val'], parameterDict[parShort]['err']])
+                else:
+                    self.addSystematic(parName, "flatParam", None)
             else:
-                preconstraints[parameterDict]['val'] = defaultValues[parShort]
+                parameterDict[parShort]['val'] = defaultValues[parShort]
+            if parShort in boundaries.keys():
+                ranges[parShort][0] = boundaries[parShort][0]
+                ranges[parShort][1] = boundaries[parShort][1]
+                print "Setting range!", ranges[parShort][0], ranges[parShort][1]
             self.w.factory("{name}[{val},{min},{max}]".format(name=parName, val=parameterDict[parShort]['val'], min=ranges[parShort][0], max=ranges[parShort][1]))
 
         # turn off log-term for 3 parameter function by setting it to zero
@@ -872,6 +879,10 @@ class DataCardMaker:
         events = histogram.Integral() * self.luminosity
         self.contributions.append({'name': name, 'pdf': pdfName, 'ID': ID, 'yield': events})
 
+    def addFixedYieldWithEvents(self, name, ID, events):
+        pdfName = "_".join([name, self.tag])
+        self.contributions.append({'name': name, 'pdf': pdfName, 'ID': ID, 'yield': events})
+
     def makeCard(self):
 
         f = open("datacard_" + self.tag + '.txt', 'w')
@@ -920,6 +931,9 @@ class DataCardMaker:
 
             elif syst['kind'] == 'discrete':
                 f.write(syst['name'] + '\t' + 'discrete\n')
+
+            elif syst['kind'] == 'flatParam':
+                f.write(syst['name'] + '\t' + 'flatParam\n')
 
             elif syst['kind'] == 'lnN':
                 f.write(syst['name'] + '\t' + 'lnN\t')
