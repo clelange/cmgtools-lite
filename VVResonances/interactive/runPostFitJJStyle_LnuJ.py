@@ -13,7 +13,7 @@ channel = "XWW"
 
 plotter = RooPlotter("combined_%s.root" % channel)
 plotter.fix("MH", mass)
-# plotter.fix("r",0.0)
+# plotter.fix("r", 0.0)
 plotter.prefit()
 plotter.addContribution("XWW", True, "X #rightarrow WW", 3, 1, ROOT.kOrange + 10, 0, ROOT.kWhite)
 plotter.addContribution("QCD", False, " QCD", 2, 1, ROOT.kBlack, 1001, ROOT.kAzure - 9)

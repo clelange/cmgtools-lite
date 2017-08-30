@@ -7,8 +7,9 @@ from CMGTools.VVResonances.plotting.TreePlotter import TreePlotter
 from CMGTools.VVResonances.plotting.MergedPlotter import MergedPlotter
 ROOT.gSystem.Load("libHiggsAnalysisCombinedLimit")
 
-useConstraints = False
-constraintsFactor = 5
+useConstraints = True
+constraintsFactor = 100
+doErfExp = True
 
 finalState = "LNUJ"
 channels = ["XWW", "XWZ"]
@@ -34,23 +35,32 @@ minMJJ = 40.0
 maxMJJ = 160.0
 
 minMVV = 800
-maxMVV = 4500.0
+# maxMVV = 4500.0
+maxMVV = 2000.0
 
 binsMJJ = 60
 binsMVV = 200
 
 fTestResults = {}
-fTestResults["mu_HP_WW_nob"] = 2
-fTestResults["mu_HP_WZ_nob"] = 3
-fTestResults["mu_LP_WW_nob"] = 2
-fTestResults["mu_LP_WZ_nob"] = 2
-fTestResults["e_HP_WW_nob"] = 2
-fTestResults["e_HP_WZ_nob"] = 3
-fTestResults["e_LP_WW_nob"] = 2
-fTestResults["e_LP_WZ_nob"] = 3
+fTestResults["mu_HP_WW_nob"] = 4
+fTestResults["mu_HP_WZ_nob"] = 4
+fTestResults["mu_LP_WW_nob"] = 4
+fTestResults["mu_LP_WZ_nob"] = 4
+fTestResults["e_HP_WW_nob"] = 4
+fTestResults["e_HP_WZ_nob"] = 4
+fTestResults["e_LP_WW_nob"] = 4
+fTestResults["e_LP_WZ_nob"] = 4
+# fTestResults["mu_HP_WW_nob"] = 2
+# fTestResults["mu_HP_WZ_nob"] = 3
+# fTestResults["mu_LP_WW_nob"] = 2
+# fTestResults["mu_LP_WZ_nob"] = 2
+# fTestResults["e_HP_WW_nob"] = 2
+# fTestResults["e_HP_WZ_nob"] = 3
+# fTestResults["e_LP_WW_nob"] = 2
+# fTestResults["e_LP_WZ_nob"] = 3
 
 
-def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, degree):
+def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, degree, doErfExp=False):
     assert type(degree) is int, "degree is not an integer: %r" % id
     assert(degree >= 2), "Need at least 2 parameters"
     assert(degree < 5), "Currently support at most 4 parameters"
@@ -102,7 +112,10 @@ def makePrefit(sampleTypes, cuts, catName, resonanceMassString, templateDir, deg
     if (degree == 3):
         qcdFunc = ROOT.TF1("qcdFunc", "[0]*TMath::Power(1-x/{sqrt_s}, [1])/TMath::Power(x/{sqrt_s}, [2])".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
     if (degree == 4):
-        qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [2])/TMath::Power(x/{sqrt_s}, [2]+[3]*TMath::Log(x/{sqrt_s}))".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
+        if doErfExp:
+            qcdFunc = ROOT.TF1("qcdFunc", "[0]*TMath::Power(x/{sqrt_s}, [1])*(1+ TMath::Erf((x-[2])/[3]))/2.".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
+        else:
+            qcdFunc = ROOT.TF1("qcdFunc", "TMath::Power(1-x/{sqrt_s}, [2])/TMath::Power(x/{sqrt_s}, [2]+[3]*TMath::Log(x/{sqrt_s}))".format(sqrt_s=sqrt_s), xRange[0], xRange[1])
 
     if (degree >= 3):
         qcdFunc.SetParameter(0, 1e-03)
@@ -175,7 +188,7 @@ def getCommand(templateDir, channel):
                     # QCD function
                     # card.addMVVBackgroundShapeQCD("QCD", "MVV", logTerm=False)
                     cuts = findCut(categories, cat="lnujj", lep=lepton, tau21=purity, mJ=boson[-1], reg=categ)
-                    parDict = makePrefit(dataTemplate, cuts, catName, resonanceMassString, templateDir, fTestResults[catName])
+                    parDict = makePrefit(dataTemplate, cuts, catName, resonanceMassString, templateDir, fTestResults[catName], doErfExp)
                     preconstraints = {}
                     boundaries = {}
                     for i in range(fTestResults[catName]-1):
@@ -199,7 +212,15 @@ def getCommand(templateDir, channel):
 
                     # card.addMVVBackgroundShapeErfPow("QCD", "MVV", preconstraints=preconstraints)
                     # card.addMVVBackgroundShapeErfPow("QCD", "MVV")
-                    card.addMVVBackgroundShapeQCDJJStyle("QCD", "MVV", degree=fTestResults[catName], boundaries=boundaries, preconstraints=preconstraints)
+                    if fTestResults[catName] == 4 and doErfExp:
+                        if useConstraints:
+                            card.addMVVBackgroundShapeErfPow("QCD", "MVV", preconstraints=preconstraints)
+                        else:
+                            card.addMVVBackgroundShapeErfPow("QCD", "MVV", preconstraints={})
+                    else:
+                        card.addMVVBackgroundShapeQCDJJStyle("QCD", "MVV", degree=fTestResults[catName], boundaries=boundaries, preconstraints=preconstraints)
+
+                    # card.addSystematic("_".join(["QCD", "LNUJ", channel, catName, '13TeV', 'norm']), "flatParam", None)  # doesn't work
                     # card.addMVVBackgroundShapeExp("QCD", "MVV")
                     # card.addFloatingYield("QCD", 1, 1000, mini=0.5*yield, maxi=1e+9)  # commented out 30 Aug
                     card.addFixedYieldWithEvents("QCD", 1, events)
