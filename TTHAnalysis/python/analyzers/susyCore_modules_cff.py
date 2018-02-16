@@ -69,23 +69,13 @@ eventFlagsAna = cfg.Analyzer(
         "HBHENoiseFilter" : [ "Flag_HBHENoiseFilter" ],
         "HBHENoiseIsoFilter" : [ "Flag_HBHENoiseIsoFilter" ],
         "globalTightHalo2016Filter" : [ "Flag_globalTightHalo2016Filter" ],
-        "CSCTightHalo2015Filter" : [ "Flag_CSCTightHalo2015Filter" ],
-        "CSCTightHaloFilter" : [ "Flag_CSCTightHaloFilter" ],
-        "CSCTightHalo2016Filter" : [ "Flag_globalTightHalo2016Filter" ],
-        "hcalLaserEventFilter" : [ "Flag_hcalLaserEventFilter" ],
         "EcalDeadCellTriggerPrimitiveFilter" : [ "Flag_EcalDeadCellTriggerPrimitiveFilter" ],
         "goodVertices" : [ "Flag_goodVertices" ],
-        "trackingFailureFilter" : [ "Flag_trackingFailureFilter" ],
         "eeBadScFilter" : [ "Flag_eeBadScFilter" ],
-        "ecalLaserCorrFilter" : [ "Flag_ecalLaserCorrFilter" ],
-        "trkPOGFilters" : [ "Flag_trkPOGFilters" ],
-        "trkPOG_manystripclus53X" : [ "Flag_trkPOG_manystripclus53X" ],
-        "trkPOG_toomanystripclus53X" : [ "Flag_trkPOG_toomanystripclus53X" ],
-        "trkPOG_logErrorTooManyClusters" : [ "Flag_trkPOG_logErrorTooManyClusters" ],
-        "MuFlag_good" : [ "Flag_noBadMuons" ],
-        "MuFlag_bad" : [ "Flag_badMuons" ],
-        "MuFlag_dup" : [ "Flag_duplicateMuons" ],
-    }
+        "ecalBadCalibFilter" : [ "Flag_ecalBadCalibFilter" ],
+        "BadPFMuonFilter" : [ "Flag_BadPFMuonFilter" ],
+        "BadChargedCandidateFilter" : [ "BadChargedCandidateFilter" ],
+        }
     )
 
 from CMGTools.TTHAnalysis.analyzers.badChargedHadronAnalyzer import badChargedHadronAnalyzer
@@ -135,7 +125,7 @@ vertexAna = cfg.Analyzer(
 pileUpAna = cfg.Analyzer(
     PileUpAnalyzer, name="PileUpAnalyzer",
     true = True,  # use number of true interactions for reweighting
-    makeHists=False
+    makeHists=True
     )
 
 
@@ -191,8 +181,8 @@ lepAna = cfg.Analyzer(
     # input collections
     muons='slimmedMuons',
     electrons='slimmedElectrons',
-    rhoMuon= 'fixedGridRhoFastjetCentralNeutral',
-    rhoElectron = 'fixedGridRhoFastjetCentralNeutral',
+    rhoMuon= 'fixedGridRhoFastjetAll',
+    rhoElectron = 'fixedGridRhoFastjetAll',
     # energy scale corrections and ghost muon suppression (off by default)
     doMuonScaleCorrections=False,
     doElectronScaleCorrections=False, # "embedded" in 5.18 for regression
@@ -228,10 +218,10 @@ lepAna = cfg.Analyzer(
     loose_electron_lostHits = 1.0,
     # muon isolation correction method (can be "rhoArea" or "deltaBeta")
     mu_isoCorr = "rhoArea" ,
-    mu_effectiveAreas = "Spring15_25ns_v1", #(can be 'Data2012' or 'Phys14_25ns_v1' or 'Spring15_25ns_v1')
+    mu_effectiveAreas = "Fall17", #(can be 'Data2012' or 'Phys14_25ns_v1' or 'Spring15_25ns_v1')
     # electron isolation correction method (can be "rhoArea" or "deltaBeta")
     ele_isoCorr = "rhoArea" ,
-    ele_effectiveAreas = "Spring15_25ns_v1" , #(can be 'Data2012' or 'Phys14_25ns_v1' or 'Spring15_25ns_v1')
+    ele_effectiveAreas = "Fall17" , #(can be 'Data2012' or 'Phys14_25ns_v1' or 'Spring15_25ns_v1')
     ele_tightId = "Cuts_2012" ,
     # Mini-isolation, with pT dependent cone: will fill in the miniRelIso, miniRelIsoCharged, miniRelIsoNeutral variables of the leptons (see https://indico.cern.ch/event/368826/ )
     doMiniIsolation = False, # off by default since it requires access to all PFCandidates 
@@ -367,8 +357,8 @@ jetAna = cfg.Analyzer(
     recalibrateJets = True, #'MC', # True, False, 'MC', 'Data'
     applyL2L3Residual = True, # Switch to 'Data' when they will become available for Data
     recalibrationType = "AK4PFchs",
-    mcGT     = "Summer16_23Sep2016V3_MC",
-    dataGT   = [(1,"Summer16_23Sep2016BCDV3_DATA"),(276831,"Summer16_23Sep2016EFV3_DATA"),(278802,"Summer16_23Sep2016GV3_DATA"),(280919,"Summer16_23Sep2016HV3_DATA")],
+    mcGT     = "Fall17_17Nov2017_V1_MC",
+    dataGT   = [(1,"Fall17_17Nov2017_V1_MC")],
     jecPath = "${CMSSW_BASE}/src/CMGTools/RootTools/data/jec/",
     shiftJEC = 0, # set to +1 or -1 to apply +/-1 sigma shift to the nominal jet energies
     addJECShifts = False, # if true, add  "corr", "corrJECUp", and "corrJECDown" for each jet (requires uncertainties to be available!)
@@ -488,7 +478,7 @@ metAna = cfg.Analyzer(
     copyMETsByValue = False,
     doTkMet = False,
     doPuppiMet = False,
-    doMetNoPU = True,
+    doMetNoPU = False,
     doMetNoMu = False,
     doMetNoEle = False,
     doMetNoPhoton = False,
@@ -563,11 +553,11 @@ susyTauMatchAna = cfg.Analyzer(
 # Core sequence of all common modules
 susyCoreSequence = [
     lheWeightAna,
+    pileUpAna,
     skimAnalyzer,
    #eventSelector,
     jsonAna,
     triggerAna,
-    pileUpAna,
     genAna,
     genHiggsAna,
     genHFAna,
