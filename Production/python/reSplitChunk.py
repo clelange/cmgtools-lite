@@ -39,4 +39,4 @@ if __name__ == '__main__':
     parser.add_option("-n", "--splitFactor", dest="splitFactor", type="int", default=-1, help="New split factor. -1 for one file per job, -N for fineSplit N")
     (options, args) = parser.parse_args()
     for a in args:
-        reSplitChunk(a,options.splitFactor,options)
+        reSplitChunk(a.strip("/"),options.splitFactor,options)
