@@ -108,10 +108,11 @@ genAna = cfg.Analyzer(
     verbose = False,
     )
 
-#pdfwAna = cfg.Analyzer(
-#    PDFWeightsAnalyzer, name="PDFWeightsAnalyzer",
-#    PDFWeights = [ pdf for pdf,num in PDFWeights ]
-#    )
+
+lheWeightAna = cfg.Analyzer(
+    LHEWeightAnalyzer, name="LHEWeightAnalyzer",
+    useLumiInfo=False
+)
 
 lepAna = cfg.Analyzer(
     LeptonAnalyzer, name="leptonAnalyzer",
@@ -399,6 +400,7 @@ coreSequence = [
     triggerAna,
     pileUpAna,
     genAna,
+    lheWeightAna,
     vertexAna,
     lepAna,
     lepIDAna,

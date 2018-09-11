@@ -23,7 +23,9 @@ if __name__ == '__main__':
         if os.path.exists(directory+'/'+options.trigcounter):
             counterFile=open(directory+'/'+options.trigcounter)
             counter=pickle.load(counterFile)
-            if len(counter)>1 and counter[1][0]=='Sum Weights':
+            if len(counter) > 2 and counter[2][0]=='Sum Weights LO':
+                events=counter[2][1]
+            elif len(counter)>1 and counter[1][0]=='Sum Weights':
                 events=counter[1][1]
             else:    
                 events=counter[0][1]
