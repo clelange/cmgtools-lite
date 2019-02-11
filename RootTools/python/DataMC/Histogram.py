@@ -103,7 +103,7 @@ class Histogram( object ):
                 legendLine = self.name
         opt = 'f'
         if self.weighted.GetFillStyle()==0:
-            opt = 'p'
+            opt = 'pe'
 
         legend.AddEntry(self.obj, legendLine, opt)
 

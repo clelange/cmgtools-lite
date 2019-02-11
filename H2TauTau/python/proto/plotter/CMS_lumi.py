@@ -6,11 +6,9 @@
 
 import ROOT
 
-cmsText = "CMS"
+cmsText = ""
 cmsTextFont = 61
 
-writeExtraText = True
-extraText = "Preliminary"
 extraTextFont = 52
 
 lumiTextSize = 0.6
@@ -27,7 +25,7 @@ extraOverCmsTextSize = 0.76
 
 drawLogo = False
 
-def CMS_lumi(pad, lumiText, iPosX):
+def CMS_lumi(pad, lumiText, iPosX, writeExtraText=True, extraText=""):
     outOfFrame = False
     if(iPosX/10 == 0):
         outOfFrame = True
@@ -83,7 +81,9 @@ def CMS_lumi(pad, lumiText, iPosX):
     elif(iPosX % 10 == 2):
         posX_ = l + 0.5*(1-l-r)
     elif(iPosX % 10 == 3):
-        posX_ = 1-r - relPosX*(1-l-r)
+        posX_ = 1-r - (relPosX+0.1)*(1-l-r)-.02
+        if writeExtraText:
+            posX_ = 1-r - (relPosX+0.1)*(1-l-r)-.12
 
     posY_ = 1-t - relPosY*(1-t-b)
 
