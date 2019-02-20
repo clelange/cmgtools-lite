@@ -5,6 +5,7 @@ from PhysicsTools.Heppy.analyzers.gen.all import *
 from CMGTools.VVResonances.analyzers.LeptonIDOverloader import *
 # from CMGTools.VVResonances.analyzers.HbbTagComputer import *
 from CMGTools.VVResonances.analyzers.VVBuilder_JJ import *
+from CMGTools.VVResonances.analyzers.jetBuilder import *
 from CMGTools.VVResonances.analyzers.TTBuilder import *
 from CMGTools.VVResonances.analyzers.VTauBuilder import *
 from CMGTools.VVResonances.analyzers.Skimmer import *
@@ -257,7 +258,7 @@ jetAna = cfg.Analyzer(
     jecPath = "${CMSSW_BASE}/src/CMGTools/RootTools/data/jec/",
     shiftJEC = 0, # set to +1 or -1 to apply +/-1 sigma shift to the nominal jet energies
     addJECShifts = True, # if true, add  "corr", "corrJECUp", and "corrJECDown" for each jet (requires uncertainties to be available!)
-    smearJets = True,
+    smearJets = False,
     shiftJER = 0, # set to +1 or -1 to get +/-1 sigma shifts
     addJERShifts = True,
     alwaysCleanPhotons = False,
@@ -293,21 +294,22 @@ jetAnaAK8 = cfg.Analyzer(
     recalibrateJets = True, #'MC', # True, False, 'MC', 'Data'
     applyL2L3Residual = 'Data', # Switch to 'Data' when they will become available for Data
     recalibrationType = "AK8PFPuppi",
+    # recalibrationType = "AK8PFchs",
     mcGT     = "Fall17_17Nov2017_V6_MC",
     dataGT   = [(297020,"Fall17_17Nov2017B_V6_DATA"), (299337,"Fall17_17Nov2017C_V6_DATA"), (302030,"Fall17_17Nov2017D_V6_DATA"), (303435,"Fall17_17Nov2017E_V6_DATA"), (304911,"Fall17_17Nov2017F_V6_DATA")],
     jecPath = "${CMSSW_BASE}/src/CMGTools/RootTools/data/jec/",
     shiftJEC = 0, # set to +1 or -1 to apply +/-1 sigma shift to the nominal jet energies
     addJECShifts = True, # if true, add  "corr", "corrJECUp", and "corrJECDown" for each jet (requires uncertainties to be available!)
-    smearJets = True,
+    smearJets = False,
     shiftJER = 0, # set to +1 or -1 to get +/-1 sigma shifts
-    addJERShifts = True,
+    addJERShifts = False,
     alwaysCleanPhotons = False,
     cleanGenJetsFromPhoton = False,
     cleanJetsFromFirstPhoton = False,
     cleanJetsFromTaus = False,
     cleanJetsFromIsoTracks = False,
     doQG = False,
-    do_mc_match = True,
+    do_mc_match = False,
     collectionPostFix = "AK8",
     calculateSeparateCorrections = True, # should be True if recalibrateJets is True, otherwise L1s will be inconsistent
     calculateType1METCorrection  = False,
@@ -321,11 +323,28 @@ jetAnaAK8 = cfg.Analyzer(
 mergedTruthAna = cfg.Analyzer(TopMergingAnalyzer,name='mergeTruthAna')
 
 
+chsJetBuilder = cfg.Analyzer(
+    jetBuilder, name='jetBuilder',
+    genJetCol = 'slimmedGenJetsAK8',
+    suffix = 'AK8PFchs',
+    mcGT     = "Fall17_17Nov2017_V6_MC",
+    dataGT   = [(297020,"Fall17_17Nov2017B_V6_DATA"), (299337,"Fall17_17Nov2017C_V6_DATA"), (302030,"Fall17_17Nov2017D_V6_DATA"), (303435,"Fall17_17Nov2017E_V6_DATA"), (304911,"Fall17_17Nov2017F_V6_DATA")],
+    jecPath = "${CMSSW_BASE}/src/CMGTools/RootTools/data/jec/",
+    recalibrationType = "AK8PFchs",
+    jetPt = 170.,
+    jetEta = 2.4,
+    smearJets = True,
+    addJERShifts = True,
+    do_mc_match = True,
+    rho = ('fixedGridRhoFastjetAll','',''),
+)
+
 
 vvAna = cfg.Analyzer(
     VVBuilder_JJ,name='vvAna',
     suffix = '',
     doPUPPI=True,
+    swapWithCustomJets = True,
     bDiscriminator = "pfDeepCSVJetTags:probb+pfDeepCSVJetTags:probbb",
     boostedBdiscriminator = "pfBoostedDoubleSecondaryVertexAK8BJetTags",
     cDiscriminatorL = "pfCombinedCvsLJetTags",
@@ -408,6 +427,7 @@ coreSequence = [
     lepIDAna,
     jetAna,
     jetAnaAK8,
+    chsJetBuilder,
     # hbbTagComputer,
     metAna,
     eventFlagsAna,

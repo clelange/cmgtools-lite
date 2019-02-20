@@ -431,6 +431,27 @@ class VVBuilder_JJ(Analyzer):
         if len(fatJets) < 2:
             return output
 
+        if hasattr(self.cfg_ana, "swapWithCustomJets") and self.cfg_ana.swapWithCustomJets:
+            # match CHS to PUPPI jets:
+            chsJets = event.CustomJetsAK8PFchs
+            jet_index = [-1, -1]
+            for refjet_index in [0, 1]:
+                drtmp = 0.8
+                for i in range(len(chsJets)):
+                    dr = deltaR(chsJets[i].eta(), chsJets[i].phi(), fatJets[refjet_index].eta(), fatJets[refjet_index].phi())
+                    if dr <= drtmp:
+                        drtmp = dr
+                        jet_index[refjet_index] = i
+                if any(jet_index) == -1:
+                    print "PROBLEM WITH CHS PUPPI jet matching", jet_index
+                    return output
+
+            # print "Comparing jets 0: ", fatJets[0], chsJets[jet_index[0]]
+            # print "Comparing jets 1: ", fatJets[1], chsJets[jet_index[1]]
+            # replace the four-vector
+            fatJets[0].setP4(chsJets[jet_index[0]].p4())
+            fatJets[1].setP4(chsJets[jet_index[1]].p4())
+
 	if debug: print "----------------- BEFORE SORTING ----------------- "
 	i = 1
         for j in fatJets:
