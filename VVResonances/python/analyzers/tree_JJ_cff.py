@@ -30,5 +30,6 @@ vvTreeProducer = cfg.Analyzer(
      collections = {
         "JJ" : NTupleCollection("jj",JJType ,5, help="VV candidate with two fat jets"),
         "LHE_weights": NTupleCollection("LHEweight",  weightsInfoType, 1000, mcOnly=True, help="LHE weight info"),
+        "genVBosons": NTupleCollection("genVBosons",  fourVectorType, 10, mcOnly=True, help="Generator-level V bosons"),
      }
 )
