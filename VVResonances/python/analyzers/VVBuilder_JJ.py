@@ -442,9 +442,9 @@ class VVBuilder_JJ(Analyzer):
                     if dr <= drtmp:
                         drtmp = dr
                         jet_index[refjet_index] = i
-                if any(jet_index) == -1:
-                    print "PROBLEM WITH CHS PUPPI jet matching", jet_index
-                    return output
+            if -1 in jet_index:
+                print "PROBLEM WITH CHS PUPPI jet matching", jet_index
+                return output
 
             # print "Comparing jets 0: ", fatJets[0], chsJets[jet_index[0]]
             # print "Comparing jets 1: ", fatJets[1], chsJets[jet_index[1]]
