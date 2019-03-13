@@ -19,7 +19,7 @@ vvTreeProducer = cfg.Analyzer(
         NTupleVariable("rho",  lambda ev: ev.rho, float, help="kt6PFJets rho"),
         NTupleVariable("rhoCN",  lambda ev: ev.rhoCN, float, help="fixed grid rho central neutral"),
         NTupleVariable("nVert",  lambda ev: len(ev.goodVertices), int, help="Number of good vertices"),
-        NTupleVariable("genWeight_LO", lambda ev: ev.LHE_weights[112].wgt/ev.LHE_weights[0].wgt*ev.genWeight, float, help="LO event weight"),
+        NTupleVariable("genWeight_LO", lambda ev: ev.LHE_weights[112].wgt/ev.LHE_weights[0].wgt*ev.genWeight, float, mcOnly=True, help="LO event weight"),
         # NTupleVariable("Flag_badChargedHadronFilter", lambda ev: ev.badChargedHadron, help="bad charged hadron filter decision"),
         # NTupleVariable("Flag_badMuonFilter", lambda ev: ev.badMuon, help="bad muon filter decision"),
      ],
